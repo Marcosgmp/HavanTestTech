@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "dgSpecHash": "DBcFakZdkfE=",
+  "success": true,
+  "projectFilePath": "/home/marcos/Documentos/GitHub/HavanTestTech/HavanTestTech/src/HavanTestTech.Application/HavanTestTech.Application.csproj",
+  "expectedPackageFiles": [
+    "/home/marcos/.nuget/packages/microsoft.extensions.dependencyinjection.abstractions/10.0.12/microsoft.extensions.dependencyinjection.abstractions.10.0.12.nupkg.sha512"
+  ],
+  "logs": []
+}
