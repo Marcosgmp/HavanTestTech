@@ -1,0 +1,15 @@
+/home/marcos/Documentos/GitHub/HavanTestTech/src/HavanTestTech.Exercises/bin/Debug/net8.0/HavanTestTech.Exercises
+/home/marcos/Documentos/GitHub/HavanTestTech/src/HavanTestTech.Exercises/bin/Debug/net8.0/HavanTestTech.Exercises.deps.json
+/home/marcos/Documentos/GitHub/HavanTestTech/src/HavanTestTech.Exercises/bin/Debug/net8.0/HavanTestTech.Exercises.runtimeconfig.json
+/home/marcos/Documentos/GitHub/HavanTestTech/src/HavanTestTech.Exercises/bin/Debug/net8.0/HavanTestTech.Exercises.dll
+/home/marcos/Documentos/GitHub/HavanTestTech/src/HavanTestTech.Exercises/bin/Debug/net8.0/HavanTestTech.Exercises.pdb
+/home/marcos/Documentos/GitHub/HavanTestTech/src/HavanTestTech.Exercises/obj/Debug/net8.0/HavanTestTech.Exercises.GeneratedMSBuildEditorConfig.editorconfig
+/home/marcos/Documentos/GitHub/HavanTestTech/src/HavanTestTech.Exercises/obj/Debug/net8.0/HavanTestTech.Exercises.AssemblyInfoInputs.cache
+/home/marcos/Documentos/GitHub/HavanTestTech/src/HavanTestTech.Exercises/obj/Debug/net8.0/HavanTestTech.Exercises.AssemblyInfo.cs
+/home/marcos/Documentos/GitHub/HavanTestTech/src/HavanTestTech.Exercises/obj/Debug/net8.0/HavanTestTech.Exercises.csproj.CoreCompileInputs.cache
+/home/marcos/Documentos/GitHub/HavanTestTech/src/HavanTestTech.Exercises/obj/Debug/net8.0/HavanTestTech.Exercises.sourcelink.json
+/home/marcos/Documentos/GitHub/HavanTestTech/src/HavanTestTech.Exercises/obj/Debug/net8.0/HavanTestTech.Exercises.dll
+/home/marcos/Documentos/GitHub/HavanTestTech/src/HavanTestTech.Exercises/obj/Debug/net8.0/refint/HavanTestTech.Exercises.dll
+/home/marcos/Documentos/GitHub/HavanTestTech/src/HavanTestTech.Exercises/obj/Debug/net8.0/HavanTestTech.Exercises.pdb
+/home/marcos/Documentos/GitHub/HavanTestTech/src/HavanTestTech.Exercises/obj/Debug/net8.0/HavanTestTech.Exercises.genruntimeconfig.cache
+/home/marcos/Documentos/GitHub/HavanTestTech/src/HavanTestTech.Exercises/obj/Debug/net8.0/ref/HavanTestTech.Exercises.dll

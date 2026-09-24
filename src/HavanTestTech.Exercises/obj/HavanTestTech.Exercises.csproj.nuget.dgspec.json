@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "/home/marcos/Documentos/GitHub/HavanTestTech/HavanTestTech/src/HavanTestTech.Exercises/HavanTestTech.Exercises.csproj": {}
+    "/home/marcos/Documentos/GitHub/HavanTestTech/src/HavanTestTech.Exercises/HavanTestTech.Exercises.csproj": {}
   },
   "projects": {
-    "/home/marcos/Documentos/GitHub/HavanTestTech/HavanTestTech/src/HavanTestTech.Exercises/HavanTestTech.Exercises.csproj": {
+    "/home/marcos/Documentos/GitHub/HavanTestTech/src/HavanTestTech.Exercises/HavanTestTech.Exercises.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "/home/marcos/Documentos/GitHub/HavanTestTech/HavanTestTech/src/HavanTestTech.Exercises/HavanTestTech.Exercises.csproj",
+        "projectUniqueName": "/home/marcos/Documentos/GitHub/HavanTestTech/src/HavanTestTech.Exercises/HavanTestTech.Exercises.csproj",
         "projectName": "HavanTestTech.Exercises",
-        "projectPath": "/home/marcos/Documentos/GitHub/HavanTestTech/HavanTestTech/src/HavanTestTech.Exercises/HavanTestTech.Exercises.csproj",
+        "projectPath": "/home/marcos/Documentos/GitHub/HavanTestTech/src/HavanTestTech.Exercises/HavanTestTech.Exercises.csproj",
         "packagesPath": "/home/marcos/.nuget/packages/",
-        "outputPath": "/home/marcos/Documentos/GitHub/HavanTestTech/HavanTestTech/src/HavanTestTech.Exercises/obj/",
+        "outputPath": "/home/marcos/Documentos/GitHub/HavanTestTech/src/HavanTestTech.Exercises/obj/",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "/home/marcos/.nuget/NuGet/NuGet.Config"
