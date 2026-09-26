@@ -48,12 +48,15 @@ public class TodoHandlersTests
         await Assert.ThrowsAsync<InvalidRequestException>(() =>
             _changeStatus.HandleAsync(created.Id, (TodoStatus)99, default));
     }
-
     [Fact]
     public async Task GetActive_ExcludesCompletedTasks()
     {
+        // The clock advances between creations so each task gets a distinct CreatedAt,
+        // making the expected ordering unambiguous.
         var pending = await CreateAsync("Pending task");
+        _clock.Advance(TimeSpan.FromSeconds(1));
         var inProgress = await CreateAsync("Task in progress");
+        _clock.Advance(TimeSpan.FromSeconds(1));
         var completed = await CreateAsync("Completed task");
 
         await _changeStatus.HandleAsync(inProgress.Id, TodoStatus.InProgress, default);
@@ -63,7 +66,6 @@ public class TodoHandlersTests
 
         Assert.Equal([pending.Id, inProgress.Id], active.Select(item => item.Id));
     }
-
     [Fact]
     public async Task GetCompleted_IncludesBothBoundaryDays()
     {
