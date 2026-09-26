@@ -34,6 +34,9 @@ dotnet test
 # Parte 3 — API
 dotnet run --project src/HavanTestTech.Api --urls http://localhost:5080
 
+# Documentação interativa (com a API rodando)
+# http://localhost:5080/swagger
+
 # Bônus — frontend (com a API já rodando em outro terminal)
 cd frontend
 npm install
@@ -115,7 +118,18 @@ Top 3 caracteres mais frequentes:
 
 ### Questão 4 — Processamento financeiro
 
+**Onde está:** `Question4/PaymentCalculator.cs` (cálculo) e `Question4/PaymentResult.cs` (resultado).
+
 `PaymentCalculator.Calculate` compara a data de pagamento com a data de vencimento usando `DayNumber` (evitando problemas de fuso horário do `DateTime`) e aplica uma de três regras: desconto progressivo limitado a 10%, valor cheio na data, ou multa fixa de 2% mais juros simples de 0,5% ao dia. Os juros são sempre calculados sobre o valor base — nunca sobre a multa — porque a regra do enunciado especifica juros simples, não compostos.
+
+**Decisões de implementação:**
+ 
+- **Comparação de datas via `DayNumber`.** Uso `DateOnly` em vez de `DateTime` para representar datas de pagamento e vencimento, porque a regra de negócio é sobre **dias**, não sobre horários. Calcular `paymentDate.DayNumber - dueDate.DayNumber` dá diretamente a diferença em dias inteiros, sem o risco de erro de um dia que aconteceria comparando `DateTime` com horários diferentes ou fusos horários distintos.
+- **`switch` de padrão sobre o sinal da diferença** (`< 0`, `> 0`, `_`) para escolher entre desconto, multa/juros ou valor cheio — deixa explícito que as três regras são mutuamente exclusivas.
+- **Desconto limitado com `Math.Min`:** `Math.Min(diasDeAntecipacao * 0.01m, 0.10m)` aplica 1% ao dia, mas nunca ultrapassa o teto de 10%, sem precisar de um `if` separado para o caso de estourar o limite.
+- **Juros sempre sobre o valor base, nunca sobre a multa.** O enunciado especifica "juros simples", que por definição incidem sempre sobre o principal — diferente de juros compostos, que incidiriam sobre saldo já acrescido de multa. Isso está isolado no método `CalculateLatePayment`, que calcula `Fine` e `Interest` a partir do mesmo `baseAmount`, nunca um a partir do outro.
+- **Arredondamento centralizado em `RoundToCents`**, usando `MidpointRounding.AwayFromZero` (arredondamento comercial padrão, o mesmo usado por bancos), para que desconto, multa e juros sejam sempre arredondados da mesma forma, evitando que a soma final destoe de centavos por causa de arredondamentos inconsistentes.
+- **`PaymentResult` é um `record`** com uma propriedade calculada (`FinalAmount`), em vez de já vir com o valor final pronto — isso deixa explícito, no retorno do método, exatamente quais componentes (desconto, multa, juros) compuseram o resultado, atendendo ao requisito do enunciado de "exibir o detalhamento".
 
 | Data do pagamento | Situação | Valor final |
 |---|---|---|
@@ -150,6 +164,49 @@ As dependências apontam sempre para dentro: `Api → Application → Domain`, e
 - **Tempo controlável via `TimeProvider`.** Em vez de chamar `DateTime.UtcNow` diretamente, os handlers recebem um `TimeProvider` injetado. Isso permite testar `CompletedAt` com um valor previsível (`TestClock`, usado nos testes), sem depender do relógio real da máquina.
 - **API fina.** Os endpoints só traduzem HTTP em chamadas aos handlers. Um único `ApiExceptionHandler` centraliza a conversão de exceções em respostas HTTP (400 para regra de negócio violada, 404 para tarefa não encontrada), no formato padrão RFC 7807 (Problem Details), evitando `try/catch` espalhado pelos endpoints.
 
+### Como cada requisito funcional foi atendido
+ 
+**1. Cadastro de tarefa.** `TodoItem` é construído com `Id` (`Guid`, gerado internamente — nunca recebido de fora, para não permitir que um cliente escolha o identificador de outra tarefa), `Title`, `Description`, `CreatedAt` (recebido via `TimeProvider`, não `DateTime.UtcNow` direto) e `Status` (inicia sempre como `Pending`). `CompletedAt` é `DateTime?`, nulo até a tarefa ser concluída — exatamente como pedido.
+ 
+**2. Atualização de status.** `TodoItem.ChangeStatus(newStatus, changedAt)` já cuida de preencher `CompletedAt` automaticamente quando o novo status é `Completed`:
+ 
+```csharp
+public void ChangeStatus(TodoStatus newStatus, DateTime changedAt)
+{
+    if (Status == TodoStatus.Completed)
+    {
+        throw new DomainException("A completed task cannot have its status changed.");
+    }
+ 
+    Status = newStatus;
+ 
+    if (newStatus == TodoStatus.Completed)
+    {
+        CompletedAt = changedAt;
+    }
+}
+```
+ 
+**3. Filtros e consultas.** `GetActiveTodosHandler` filtra por `item.IsActive` (uma propriedade calculada em `TodoItem`, `Status != TodoStatus.Completed`, para não duplicar essa lógica em todo lugar que precisar saber se uma tarefa está ativa). `GetCompletedTodosHandler` recebe duas datas (`DateOnly`) e converte para um intervalo `[inicio, fim + 1 dia)` sobre `CompletedAt` — o `+1 dia` no limite superior garante que o dia final do intervalo seja **inclusivo**, tratando corretamente o caso em que a tarefa foi concluída em qualquer horário daquele último dia.
+ 
+**4. Validações de negócio.** Título vazio ou menor que 5 caracteres lança `DomainException` direto no construtor de `TodoItem` — a entidade nunca chega a existir em estado inválido. Alterar status de tarefa já concluída lança `DomainException` em `ChangeStatus` (mostrado acima). As duas regras têm teste unitário dedicado em `TodoItemTests`.
+ 
+**5. Tratamento de exceções e retornos HTTP.** Como optei por Web API, o requisito "tratamento adequado de exceções e retornos HTTP" foi resolvido com `ApiExceptionHandler`, implementando `IExceptionHandler` (recurso nativo do .NET 8), que mapeia cada tipo de exceção para um código HTTP e devolve a resposta no formato padrão `ProblemDetails` (RFC 7807):
+ 
+| Exceção | Status HTTP | Quando acontece |
+|---|---|---|
+| `DomainException` | 400 | Regra de negócio violada (título curto, status já concluído) |
+| `InvalidRequestException` | 400 | Requisição malformada (enum de status fora do intervalo válido, intervalo de datas invertido) |
+| `TodoNotFoundException` | 404 | `Id` não encontrado no repositório |
+| Qualquer outra | 500 | Erro inesperado — a mensagem interna não é exposta ao cliente, só logada no servidor |
+ 
+**6. Persistência in-memory.** `InMemoryTodoRepository` usa `ConcurrentDictionary<Guid, TodoItem>` em vez de uma `List<TodoItem>` simples, porque o repositório é registrado como singleton (`AddSingleton` em `DependencyInjection.cs`) e, portanto, compartilhado entre requisições HTTP simultâneas — uma coleção não thread-safe causaria condição de corrida sob concorrência real.
+ 
+### Documentação interativa (Swagger)
+ 
+A API expõe Swagger/OpenAPI em `/swagger`, habilitado apenas em ambiente de `Development`. Os cinco endpoints estão nomeados (`.WithName(...)`) e descritos (`.WithSummary(...)`), permitindo testar cada rota diretamente pelo navegador, sem precisar de `curl` ou Postman.
+
+
 **Trade-off consciente:** para uma aplicação deste tamanho, um único projeto com pastas já seria suficiente. A separação em quatro projetos existe para que a regra de dependência seja **verificada pelo compilador** (o `Domain` fisicamente não consegue referenciar `Infrastructure`, por exemplo), e para deixar explícito, mesmo em um teste técnico pequeno, o entendimento de Clean Architecture e SOLID que a vaga exige.
 
 ### Endpoints
@@ -164,13 +221,22 @@ As dependências apontam sempre para dentro: `Api → Application → Domain`, e
 
 ### Testes
 
-`dotnet test` roda a suíte completa: regras de `TodoItem` (Domain), comportamento dos handlers usando o repositório real in-memory (Application), e os algoritmos das Questões 2, 3 e 4. O `TestClock` (um `TimeProvider` controlável) permite testar cenários como "a tarefa foi concluída 2 horas depois de criada" sem depender do relógio do sistema.
+`dotnet test` roda a suíte completa: regras de `TodoItem` (Domain), comportamento dos handlers usando o repositório real in-memory (Application), e os algoritmos das Questões 2, 3 e 4. Alguns pontos de destaque na estratégia de testes:
+ 
+- **`TestClock`** é uma implementação de `TimeProvider` totalmente controlável pelo teste (`Advance(TimeSpan)`), o que permite simular cenários como "esta tarefa foi concluída 2 horas depois de criada" sem depender do relógio real da máquina — o que tornaria o teste não determinístico.
+- **Testes de handler usam o `InMemoryTodoRepository` real**, não um mock — como o repositório é simples o suficiente e não tem dependências externas, testar contra a implementação real dá mais confiança do que testar contra um duble que poderia divergir do comportamento real.
+- **Casos de erro são testados tanto quanto os de sucesso**: `ChangeStatus_WithUnknownId_ThrowsNotFound`, `ChangeStatus_WithUndefinedStatus_ThrowsInvalidRequest`, `GetCompleted_WithStartAfterEnd_ThrowsInvalidRequest` — garantindo que as validações de negócio realmente bloqueiam o que devem bloquear, não só que o caminho feliz funciona.
 
 ---
 
 ## Bônus: Frontend React
 
 SPA em React + TypeScript (Vite) que consome a API: formulário de criação com exibição de erros de validação vindos do backend, listagem em cards com badge colorido por status, e um botão que avança o status da tarefa (Pendente → Em Andamento → Concluída), atualizando a lista automaticamente após cada operação.
+
+**Decisões de implementação:**
+- **`useTodos` centraliza estado e chamadas à API** em um hook próprio, separado dos componentes visuais — `App.tsx` só orquestra `TodoForm` e `TodoCard`, sem saber como os dados são buscados ou persistidos.
+- **Erros da API aparecem na tela**, extraídos do campo `detail` do `ProblemDetails` retornado pelo backend (por exemplo, a mensagem de título muito curto), em vez de um erro genérico.
+- **O botão de avançar status usa uma tabela de transição (`NEXT_STATUS`)**, que já reflete a mesma regra do backend (uma tarefa concluída não tem próximo estado) — evitando que a interface ofereça uma ação que o backend rejeitaria.
 
 A pasta pode ser rodada de forma independente (`cd frontend && npm install && npm run dev`), desde que a API esteja no ar em `http://localhost:5080` — endereço configurável via variável de ambiente `VITE_API_URL`.
 
